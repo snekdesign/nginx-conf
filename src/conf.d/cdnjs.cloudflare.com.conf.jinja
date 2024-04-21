@@ -1,0 +1,15 @@
+server {
+    # http://nginx.org/en/docs/http/ngx_http_core_module.html
+    listen 443 ssl;
+    server_name cdnjs.cloudflare.com;
+
+    # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
+    location / {
+        proxy_pass https://mirrors.sustech.edu.cn/cdnjs/;
+    }
+    proxy_store {{ proxy_store }}/$server_name$uri;
+
+    # http://nginx.org/en/docs/http/ngx_http_ssl_module.html
+    ssl_certificate ssl/$server_name.crt;
+    ssl_certificate_key ssl/$server_name.key;
+}

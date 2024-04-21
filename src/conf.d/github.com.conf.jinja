@@ -1,0 +1,25 @@
+server {
+    # http://nginx.org/en/docs/http/ngx_http_core_module.html
+    listen 443 ssl;
+    server_name github.com;
+
+    # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
+    location / {
+        proxy_pass https://github_web;
+    }
+    proxy_set_header Host $server_name;
+    proxy_ssl_name $server_name;
+    proxy_ssl_server_name on;
+
+    # http://nginx.org/en/docs/http/ngx_http_ssl_module.html
+    ssl_certificate ssl/$server_name.crt;
+    ssl_certificate_key ssl/$server_name.key;
+}
+
+# http://nginx.org/en/docs/http/ngx_http_upstream_module.html
+upstream github_web {
+    keepalive 16;
+    {%- for k, v in github_web|dictsort %}
+    server {{ k }}:443 weight={{ v }} fail_timeout=3600s;
+    {%- endfor %}
+}

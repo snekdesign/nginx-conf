@@ -1,0 +1,39 @@
+events {
+}
+
+http {
+    # http://nginx.org/en/docs/http/ngx_http_core_module.html
+    default_type application/octet-stream;
+    include mime.types;
+    include conf.d/ajax.googleapis.com.conf;
+    include conf.d/cdnjs.cloudflare.com.conf;
+    include conf.d/github.com.conf;
+    include conf.d/gist.github.com.conf;
+    include conf.d/zenodo.org.conf;
+    types_hash_bucket_size 128;
+    server {
+        root {{ root }};
+
+        # https://nginx.org/en/docs/http/ngx_http_autoindex_module.html
+        autoindex on;
+        autoindex_exact_size off;
+        autoindex_localtime on;
+
+        # http://nginx.org/en/docs/http/ngx_http_log_module.html
+        access_log off;
+    }
+
+    # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
+    proxy_buffer_size 8k;
+    proxy_http_version 1.1;
+    proxy_ignore_client_abort on;
+    proxy_set_header Connection "";
+    proxy_socket_keepalive on;
+
+    # http://nginx.org/en/docs/http/ngx_http_ssl_module.html
+    ssl_session_cache shared:SSL:1m;
+    server {
+        listen 443 ssl default_server;
+        ssl_reject_handshake on;
+    }
+}
