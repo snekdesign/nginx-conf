@@ -2,11 +2,11 @@ server {
     # http://nginx.org/en/docs/http/ngx_http_core_module.html
     include snippets/ssl.conf;
     resolver 127.0.0.1 ipv6=off;
+    root {{ proxy_store }}/$server_name;
     server_name zenodo.org;
 
     location /static/ {
         error_page 404 = @fetch;
-        root {{ proxy_store }}/$server_name/static;
 
         # https://nginx.org/en/docs/http/ngx_http_autoindex_module.html
         autoindex on;
