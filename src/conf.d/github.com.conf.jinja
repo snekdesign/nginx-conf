@@ -1,19 +1,15 @@
 server {
     # http://nginx.org/en/docs/http/ngx_http_core_module.html
-    listen 443 ssl;
+    include snippets/ssl.conf;
     server_name github.com;
 
-    # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
     location / {
+        # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
         proxy_pass https://github_web;
     }
     proxy_set_header Host $server_name;
     proxy_ssl_name $server_name;
     proxy_ssl_server_name on;
-
-    # http://nginx.org/en/docs/http/ngx_http_ssl_module.html
-    ssl_certificate ssl/$server_name.crt;
-    ssl_certificate_key ssl/$server_name.key;
 }
 
 # http://nginx.org/en/docs/http/ngx_http_upstream_module.html

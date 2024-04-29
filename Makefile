@@ -5,12 +5,15 @@ override SITES = \
 	cdnjs.cloudflare.com \
 	github.com \
 	gist.github.com \
+	github.githubassets.com \
 	zenodo.org
 
 .PHONY : all
 all : \
 	build/nginx/mime.types \
 	build/nginx/nginx.conf \
+	build/nginx/snippets/ssl.conf \
+	build/nginx/snippets/static_file_proxy.conf \
 	$(foreach \
 		SITE, \
 		$(SITES), \
@@ -37,6 +40,14 @@ build/nginx/conf.d/%.conf : build/tmp/data.json
 		minijinja-cli src/conf.d/$*.conf.jinja $< -o $@; \
 	else \
 		cp src/conf.d/$*.conf $@; \
+	fi
+
+build/nginx/snippets/%.conf : build/tmp/data.json
+	mkdir -p build/nginx/snippets
+	if [ -f src/snippets/$*.conf.jinja ]; then \
+		minijinja-cli src/snippets/$*.conf.jinja $< -o $@; \
+	else \
+		cp src/snippets/$*.conf $@; \
 	fi
 
 build/nginx/ssl/%.crt : build/tmp/%.csr
