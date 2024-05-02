@@ -1,11 +1,10 @@
 server {
     # http://nginx.org/en/docs/http/ngx_http_core_module.html
     include snippets/ssl.conf;
-    resolver 127.0.0.1 ipv6=off;
     root {{ proxy_store }}/$server_name;
-    server_name zenodo.org;
+    server_name cdn.jsdelivr.net;
 
-    location /static/ {
+    location /npm/ {
         error_page 404 = @fetch;
         log_not_found off;
 
@@ -17,11 +16,11 @@ server {
         internal;
 
         # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
-        proxy_pass https://$server_name;
+        proxy_pass https://fastly.jsdelivr.net;
         proxy_store {{ proxy_store }}/$server_name$uri;
     }
 
     location / {
-        proxy_pass https://$server_name;
+        proxy_pass https://fastly.jsdelivr.net;
     }
 }

@@ -1,0 +1,79 @@
+server {
+    # http://nginx.org/en/docs/http/ngx_http_core_module.html
+    listen {{ conda_port }};
+    recursive_error_pages on;
+    resolver 114.114.114.114 ipv6=off;
+    root {{ proxy_store }}/conda.anaconda.org;
+
+    location ~ ^/[a-zA-Z0-9\-]+/label/*\.(conda|tar\.bz2)$ {
+        error_page 404 = @fetch;
+        log_not_found off;
+    }
+
+    location ~ ^/(auto|biobakery|bioconda|c4aarch64|caffe2|conda-forge|deepmodeling|dglteam|fastai|fermi|idaholab|intel|matsci|menpo|MindSpore|mordred-descriptor|msys2|numba|ohmeta|omnia|Paddle|peterjc123|plotly|psi4|pytorch-lts|pytorch-test|pytorch|pytorch3d|pyviz|qiime2|rapidsai|rdkit|simpleitk|stackless|ursky)/*\.(conda|tar\.bz2)$ {
+        error_page 404 = @fetch_mirror;
+        log_not_found off;
+    }
+
+    location ~ ^/nvidia/*\.(conda|tar\.bz2)$ {
+        error_page 404 = @fetch_nvidia;
+        log_not_found off;
+    }
+
+    location ~ \.(conda|tar\.bz2)$ {
+        error_page 404 = @fetch;
+        log_not_found off;
+    }
+
+    # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
+    location / {
+        proxy_pass https://conda.anaconda.org;
+        proxy_ssl_server_name on;
+    }
+
+    location @fetch {
+        internal;
+
+        proxy_pass https://conda.anaconda.org$request_uri;
+        proxy_ssl_server_name on;
+        proxy_store {{ proxy_store }}/conda.anaconda.org$uri;
+    }
+
+    location @fetch_mirror {
+        error_page 404 = @fetch;
+        internal;
+        log_not_found off;
+
+        proxy_intercept_errors on;
+        proxy_next_upstream http_502;
+        proxy_pass http://upstream_anaconda/anaconda/cloud$request_uri;
+        proxy_store {{ proxy_store }}/conda.anaconda.org$uri;
+    }
+
+    location @fetch_nvidia {
+        error_page 404 = @fetch;
+        internal;
+        log_not_found off;
+
+        proxy_intercept_errors on;
+        proxy_pass https://mirrors.sustech.edu.cn/anaconda-extra/cloud$request_uri;
+        proxy_store {{ proxy_store }}/conda.anaconda.org$uri;
+    }
+}
+
+{% for k, v in conda_mirrors|dictsort %}
+server {
+    listen {{ v }};
+    location / {
+        proxy_pass https://{{ k }};
+    }
+}
+{% endfor %}
+
+# http://nginx.org/en/docs/http/ngx_http_upstream_module.html
+upstream upstream_anaconda {
+    keepalive 5;
+    {%- for k, v in conda_mirrors|dictsort %}
+    server 127.0.0.1:{{ v }};
+    {%- endfor %}
+}

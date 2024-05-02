@@ -5,7 +5,7 @@ server {
 
     location / {
         # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
-        proxy_pass https://github_web;
+        proxy_pass https://upstream_github;
     }
     proxy_set_header Host $server_name;
     proxy_ssl_name $server_name;
@@ -13,7 +13,7 @@ server {
 }
 
 # http://nginx.org/en/docs/http/ngx_http_upstream_module.html
-upstream github_web {
+upstream upstream_github {
     keepalive 16;
     {%- for k, v in github_web|dictsort %}
     server {{ k }}:443 weight={{ v }} fail_timeout=3600s;

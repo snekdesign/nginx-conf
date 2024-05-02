@@ -2,6 +2,7 @@
 root {{ proxy_store }}/$server_name;
 location / {
     error_page 404 = @fetch;
+    log_not_found off;
 
     # https://nginx.org/en/docs/http/ngx_http_autoindex_module.html
     autoindex on;

@@ -2,6 +2,7 @@ SHELL = /bin/sh
 
 override SITES = \
 	ajax.googleapis.com \
+	cdn.jsdelivr.net \
 	cdnjs.cloudflare.com \
 	github.com \
 	gist.github.com \
@@ -12,6 +13,7 @@ override SITES = \
 all : \
 	build/nginx/mime.types \
 	build/nginx/nginx.conf \
+	build/nginx/conf.d/conda.anaconda.org.conf \
 	build/nginx/snippets/ssl.conf \
 	build/nginx/snippets/static_file_proxy.conf \
 	$(foreach \
@@ -87,7 +89,7 @@ build/tmp/data.json : build/tmp/ext_mime.db build/tmp/meta.json
 
 build/tmp/ext_mime.db :
 	mkdir -p build/tmp
-	curl -Lo $@ https://cdn.jsdelivr.net/gh/mime-types/mime-types-data@main/data/ext_mime.db
+	curl -Lo $@ https://fastly.jsdelivr.net/gh/mime-types/mime-types-data@main/data/ext_mime.db
 
 build/tmp/meta.json :
 	mkdir -p build/tmp

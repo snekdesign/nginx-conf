@@ -16,6 +16,8 @@ import pandas as pd
 def main() -> None:
     os.chdir('build/tmp')
     obj = {
+        'conda_mirrors': _conda_mirrors(),
+        'conda_port': 3000,
         'github_web': _github_web(),
         'mime_types': _mime_types(),
         'proxy_store': 'F:/var/www',
@@ -23,6 +25,24 @@ def main() -> None:
     }
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(obj, f, separators=(',', ':'))
+
+
+def _conda_mirrors() -> dict[str, int]:
+    mirrors = [
+        'mirrors.bfsu.edu.cn',
+        'mirrors.cqupt.edu.cn',
+        'mirrors.lzu.edu.cn',
+        'mirrors.njtech.edu.cn',
+        'mirror.nju.edu.cn',
+        'mirror.nyist.edu.cn',
+        'mirrors.pku.edu.cn',
+        'mirrors.shanghaitech.edu.cn',
+        'mirror.sjtu.edu.cn',
+        'mirrors.sustech.edu.cn',
+        'mirrors.tuna.tsinghua.edu.cn',
+        'mirrors.zju.edu.cn',
+    ]
+    return {k: v for v, k in enumerate(mirrors, 30000)}
 
 
 def _github_web() -> dict[str, int]:
