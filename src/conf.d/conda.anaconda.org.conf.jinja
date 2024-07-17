@@ -10,7 +10,7 @@ server {
         log_not_found off;
     }
 
-    location ~ ^/(auto|biobakery|bioconda|c4aarch64|caffe2|conda-forge|deepmodeling|dglteam|fastai|fermi|idaholab|intel|matsci|menpo|MindSpore|mordred-descriptor|msys2|numba|ohmeta|omnia|Paddle|peterjc123|plotly|psi4|pytorch-lts|pytorch-test|pytorch|pytorch3d|pyviz|qiime2|rapidsai|rdkit|simpleitk|stackless|ursky)/*\.(conda|tar\.bz2)$ {
+    location ~ ^/(auto|biobakery|bioconda|c4aarch64|caffe2|conda-forge|deepmodeling|dglteam|fastai|fermi|idaholab|matsci|menpo|MindSpore|mordred-descriptor|msys2|numba|ohmeta|omnia|Paddle|peterjc123|plotly|psi4|pytorch-lts|pytorch-test|pytorch|pytorch3d|pyviz|qiime2|rapidsai|rdkit|simpleitk|stackless|ursky)/*\.(conda|tar\.bz2)$ {
         error_page 404 = @fetch_mirror;
         log_not_found off;
     }
@@ -29,6 +29,11 @@ server {
     location / {
         proxy_pass https://conda.anaconda.org;
         proxy_ssl_server_name on;
+    }
+
+    # https://community.intel.com/t5/oneAPI-Registration-Download/Disappearance-of-intel-conda-channel/m-p/1614250?profile.language=en
+    location ^~ /intel/ {
+        proxy_pass https://software.repos.intel.com/python/conda/;
     }
 
     location @fetch {
