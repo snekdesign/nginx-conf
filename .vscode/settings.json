@@ -1,7 +1,3 @@
 {
-    "files.associations": {
-        "mime.types": "properties",
-        "mime.types.jinja": "properties",
-        "*.conf.jinja": "properties",
-    }
+    "explorer.excludeGitIgnore": true,
 }
