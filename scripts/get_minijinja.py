@@ -150,6 +150,21 @@ class _GitHubRelease(pydantic_settings.BaseSettings):
         return (json_settings,)
 
 
+class _HTTPDownloader:
+    def __init__(self, size):
+        self._size = size
+
+    def __call__(self, url, output_file, pooch_):
+        with warnings.catch_warnings(action='ignore'):
+            progressbar = _tqdm(total=self._size, unit='B', unit_scale=True)
+        headers = {
+            'Accept': 'application/octet-stream',
+            'X-GitHub-Api-Version': '2022-11-28',
+        }
+        downloader = pooch.HTTPDownloader(progressbar, headers=headers)
+        return downloader(url, output_file, pooch_)
+
+
 def _parse_args():
     binary = _Binary()
     match binary.platform:
@@ -169,24 +184,13 @@ def _parse_args():
     return asset
 
 
-def _retrieve(url, size: int, known_hash=None, processor=None):
-    with warnings.catch_warnings(action='ignore'):
-        progressbar = _tqdm(total=size, unit='B', unit_scale=True)
-    headers = {
-        'Accept': 'application/octet-stream',
-        'X-GitHub-Api-Version': '2022-11-28',
-    }
-    files = pooch.retrieve(
+def _retrieve(url, size, known_hash=None, processor=None):
+    return pooch.retrieve(
         url,
         known_hash,
         processor=processor,
-        downloader=pooch.HTTPDownloader(progressbar, headers=headers),
+        downloader=_HTTPDownloader(size),
     )
-    if not progressbar.disable:
-        progressbar.reset()
-        progressbar.update(size)
-        progressbar.close()
-    return files
 
 
 # https://github.com/tqdm/tqdm/issues/1378
@@ -197,6 +201,20 @@ class _tqdm(tqdm.rich.tqdm):
         if hasattr(self, '_prog'):
             self._prog.reset(self._task_id, total=total)
         super(tqdm.rich.tqdm, self).reset(total=total)
+
+    @property
+    def total(self):
+        return self._total
+
+    @total.setter
+    def total(self, new):
+        try:
+            old = self._total
+        except AttributeError:
+            self._total = new
+        else:
+            if new != old:
+                raise RuntimeError(f'asset.size={old}, Content-Length={new}')
 
 
 if __name__ == '__main__':
