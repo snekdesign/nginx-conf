@@ -21,6 +21,7 @@ import pandas as pd
 import pooch
 import pydantic
 import pydantic_settings
+import requests
 import rich.logging
 import tqdm.rich
 
@@ -155,14 +156,31 @@ class _HTTPDownloader:
         self._size = size
 
     def __call__(self, url, output_file, pooch_):
-        with warnings.catch_warnings(action='ignore'):
-            progressbar = _tqdm(total=self._size, unit='B', unit_scale=True)
         headers = {
             'Accept': 'application/octet-stream',
             'X-GitHub-Api-Version': '2022-11-28',
         }
-        downloader = pooch.HTTPDownloader(progressbar, headers=headers)
-        return downloader(url, output_file, pooch_)
+        last_exc = None
+        with open(output_file, 'w+b') as f:
+            for _ in range(10):
+                if n := f.tell():
+                    headers['Range'] = f'bytes={n}-'
+                progress = _tqdm(total=self._size-n, unit='B', unit_scale=True)
+                downloader = pooch.HTTPDownloader(progress, headers=headers)
+                try:
+                    with progress:
+                        return downloader(url, f, pooch_)
+                except requests.RequestException as e:
+                    e.__context__ = last_exc
+                    if r := e.response:
+                        if r.headers.get('Accept-Ranges', 'none') == 'none':
+                            raise
+                    last_exc = e
+                except BaseException as e:
+                    e.__context__ = last_exc
+                    raise
+        assert last_exc
+        raise last_exc
 
 
 def _parse_args():
@@ -201,6 +219,13 @@ class _tqdm(tqdm.rich.tqdm):
         if hasattr(self, '_prog'):
             self._prog.reset(self._task_id, total=total)
         super(tqdm.rich.tqdm, self).reset(total=total)
+
+    def __init__(self, *args, **kwargs):
+        with warnings.catch_warnings(
+            action='ignore',
+            category=tqdm.TqdmExperimentalWarning,
+        ):
+            super().__init__(*args, **kwargs)
 
     @property
     def total(self):
