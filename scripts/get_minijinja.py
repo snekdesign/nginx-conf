@@ -211,12 +211,10 @@ def _retrieve(url, size, known_hash=None, processor=None):
     )
 
 
-# https://github.com/tqdm/tqdm/issues/1378
-# https://github.com/tqdm/tqdm/pull/1596
 class _tqdm(tqdm.rich.tqdm):
     @override
     def reset(self, total=None):
-        if hasattr(self, '_prog'):
+        if hasattr(self, '_prog') and (total is not None):
             self._prog.reset(self._task_id, total=total)
         super(tqdm.rich.tqdm, self).reset(total=total)
 
