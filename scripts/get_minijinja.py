@@ -162,7 +162,7 @@ class _HTTPDownloader:
         }
         last_exc = None
         with open(output_file, 'w+b') as f:
-            for _ in range(10):
+            for _ in range(42):
                 if n := f.tell():
                     headers['Range'] = f'bytes={n}-'
                 progress = _tqdm(total=self._size-n, unit='B', unit_scale=True)
