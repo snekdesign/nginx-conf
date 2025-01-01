@@ -1,5 +1,5 @@
 types {
-    {%- for k, v in mime_types|dictsort %}
+    {%- for k, v in mime.types|dictsort %}
     {{ k }} {{ v }};
     {%- endfor %}
 }

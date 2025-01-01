@@ -15,7 +15,7 @@ server {
 # http://nginx.org/en/docs/http/ngx_http_upstream_module.html
 upstream upstream_github {
     keepalive 16;
-    {%- for k, v in github_web|dictsort %}
-    server {{ k }}:443 weight={{ v }} fail_timeout=3600s;
+    {%- for k, v in github.web|dictsort %}
+    server {{ k }}:443 weight={{ v }};
     {%- endfor %}
 }

@@ -1,0 +1,53 @@
+[project]
+name = 'nginx-conf'
+
+[tool.basedpyright]
+strict = ['configure.py']
+typeCheckingMode = 'off'
+
+[tool.pixi.project]
+channels = ['conda-forge']
+platforms = ['linux-64', 'osx-64', 'osx-arm64', 'win-64']
+
+[tool.pixi.dependencies]
+openssl = '>=3.4.0'
+pandas = '>=2.1.1'
+pandas-stubs = '>=2.1.1'
+pooch = '>=1.8.1'
+pydantic-settings = '>=2.3.0'
+python = '>=3.12.0'
+rich = '>=9.12.0'
+tqdm = '>=4.56.0'
+
+[tool.pixi.target.unix.dependencies]
+make = '*'
+
+[tool.pixi.target.win-64.dependencies]
+m2-base = '*'
+m2-make = '*'
+
+[tool.pydantic-settings.conda]
+port = 3000
+mirrors = [
+    'mirrors.bfsu.edu.cn',
+    'mirror.bjtu.edu.cn',
+    'mirrors.cqupt.edu.cn',
+    'mirrors.lzu.edu.cn',
+    'mirrors.njtech.edu.cn',
+    'mirror.nju.edu.cn',
+    'mirror.nyist.edu.cn',
+    'mirrors.pku.edu.cn',
+    'mirrors.shanghaitech.edu.cn',
+    'mirror.sjtu.edu.cn',
+    'mirrors.sustech.edu.cn',
+    'mirrors.tuna.tsinghua.edu.cn',
+    'mirrors.ustc.edu.cn',
+    'mirrors.zju.edu.cn',
+]
+
+[tool.pydantic-settings.conda.intel]
+port = 3001
+
+[tool.pydantic-settings.http.server]
+root = 'E:/share/nginx/html'
+proxy_store = 'E:/share/nginx/html'

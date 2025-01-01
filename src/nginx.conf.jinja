@@ -16,10 +16,11 @@ http {
     include conf.d/github.com.conf;
     include conf.d/gist.github.com.conf;
     include conf.d/github.githubassets.com.conf;
+    include conf.d/software.repos.intel.com.conf;
     include conf.d/zenodo.org.conf;
     types_hash_bucket_size 128;
     server {
-        root {{ root }};
+        root {{ http.server.root }};
 
         # https://nginx.org/en/docs/http/ngx_http_autoindex_module.html
         autoindex on;
@@ -34,7 +35,7 @@ http {
     proxy_ignore_client_abort on;
     proxy_set_header Connection "";
     proxy_socket_keepalive on;
-    proxy_temp_path {{ proxy_store }}/tmp;
+    proxy_temp_path {{ http.server.proxy_store }}/tmp;
 
     # http://nginx.org/en/docs/http/ngx_http_ssl_module.html
     ssl_session_cache shared:SSL:1m;
@@ -42,4 +43,11 @@ http {
         listen 443 ssl default_server;
         ssl_reject_handshake on;
     }
+}
+
+stream {
+    include conf.d/stream/github.com.conf;
+
+    # http://nginx.org/en/docs/stream/ngx_stream_proxy_module.html
+    proxy_socket_keepalive on;
 }

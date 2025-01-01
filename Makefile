@@ -14,6 +14,8 @@ all : \
 	build/nginx/mime.types \
 	build/nginx/nginx.conf \
 	build/nginx/conf.d/conda.anaconda.org.conf \
+	build/nginx/conf.d/software.repos.intel.com.conf \
+	build/nginx/conf.d/stream/github.com.conf \
 	build/nginx/snippets/ssl.conf \
 	build/nginx/snippets/static_file_proxy.conf \
 	$(foreach \
@@ -42,6 +44,14 @@ build/nginx/conf.d/%.conf : build/tmp/data.json
 		minijinja-cli src/conf.d/$*.conf.jinja $< -o $@; \
 	else \
 		cp src/conf.d/$*.conf $@; \
+	fi
+
+build/nginx/conf.d/stream/%.conf : build/tmp/data.json
+	mkdir -p build/nginx/conf.d/stream
+	if [ -f src/conf.d/stream/$*.conf.jinja ]; then \
+		minijinja-cli src/conf.d/stream/$*.conf.jinja $< -o $@; \
+	else \
+		cp src/conf.d/stream/$*.conf $@; \
 	fi
 
 build/nginx/snippets/%.conf : build/tmp/data.json
@@ -84,15 +94,6 @@ build/tmp/%.csr : build/nginx/ssl/%.key
 		-addext subjectAltName=DNS:$* \
 		-subj /CN=$*/O=nginx-conf
 
-build/tmp/data.json : build/tmp/ext_mime.db build/tmp/meta.json
-	python3 -I scripts/make_data.py
-
-build/tmp/ext_mime.db :
+build/tmp/data.json :
 	mkdir -p build/tmp
-	curl -Lo $@ https://fastly.jsdelivr.net/gh/mime-types/mime-types-data@main/data/ext_mime.db
-
-build/tmp/meta.json :
-	mkdir -p build/tmp
-	curl -Lo $@ https://api.github.com/meta
-
-.SECONDARY : build/tmp/ext_mime.db build/tmp/meta.json
+	python -I configure.py

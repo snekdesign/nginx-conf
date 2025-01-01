@@ -1,0 +1,15 @@
+server {
+    # http://nginx.org/en/docs/stream/ngx_stream_core_module.html
+    listen 22;
+    server_name github.com;
+
+    # http://nginx.org/en/docs/stream/ngx_stream_proxy_module.html
+    proxy_pass upstream_github;
+}
+
+# http://nginx.org/en/docs/stream/ngx_stream_upstream_module.html
+upstream upstream_github {
+    {%- for k, v in github.git|dictsort %}
+    server {{ k }}:22 weight={{ v }};
+    {%- endfor %}
+}

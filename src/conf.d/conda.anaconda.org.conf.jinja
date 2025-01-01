@@ -1,16 +1,16 @@
 server {
     # http://nginx.org/en/docs/http/ngx_http_core_module.html
-    listen {{ conda_port }};
+    listen {{ conda.port }};
     recursive_error_pages on;
     resolver 114.114.114.114 ipv6=off;
-    root {{ proxy_store }}/conda.anaconda.org;
+    root {{ http.server.proxy_store }}/conda.anaconda.org;
 
     location ~ ^/[a-zA-Z0-9\-]+/label/*\.(conda|tar\.bz2)$ {
         error_page 404 = @fetch;
         log_not_found off;
     }
 
-    location ~ ^/(auto|biobakery|bioconda|c4aarch64|caffe2|conda-forge|deepmodeling|dglteam|fastai|fermi|idaholab|matsci|menpo|MindSpore|mordred-descriptor|msys2|numba|ohmeta|omnia|Paddle|peterjc123|plotly|psi4|pytorch-lts|pytorch-test|pytorch|pytorch3d|pyviz|qiime2|rapidsai|rdkit|simpleitk|stackless|ursky)/*\.(conda|tar\.bz2)$ {
+    location ~ ^/(auto|biobakery|bioconda|c4aarch64|caffe2|conda-forge|deepmodeling|dglteam|fastai|fermi|idaholab|matsci|menpo|MindSpore|mordred-descriptor|msys2|numba|ohmeta|omnia|Paddle|peterjc123|plotly|psi4|pytorch-lts|pytorch-test|pytorch|pytorch3d|pyviz|qiime2|rapidsai|rdkit|simpleitk|speleo3|stackless|ursky)/*\.(conda|tar\.bz2)$ {
         error_page 404 = @fetch_mirror;
         log_not_found off;
     }
@@ -31,17 +31,12 @@ server {
         proxy_ssl_server_name on;
     }
 
-    # https://community.intel.com/t5/oneAPI-Registration-Download/Disappearance-of-intel-conda-channel/m-p/1614250?profile.language=en
-    location ^~ /intel/ {
-        proxy_pass https://software.repos.intel.com/python/conda/;
-    }
-
     location @fetch {
         internal;
 
         proxy_pass https://conda.anaconda.org$request_uri;
         proxy_ssl_server_name on;
-        proxy_store {{ proxy_store }}/conda.anaconda.org$uri;
+        proxy_store {{ http.server.proxy_store }}/conda.anaconda.org$uri;
     }
 
     location @fetch_mirror {
@@ -51,8 +46,8 @@ server {
 
         proxy_intercept_errors on;
         proxy_next_upstream http_502;
-        proxy_pass http://upstream_anaconda/anaconda/cloud$request_uri;
-        proxy_store {{ proxy_store }}/conda.anaconda.org$uri;
+        proxy_pass https://upstream_anaconda/anaconda/cloud$request_uri;
+        proxy_store {{ http.server.proxy_store }}/conda.anaconda.org$uri;
     }
 
     location @fetch_nvidia {
@@ -62,23 +57,15 @@ server {
 
         proxy_intercept_errors on;
         proxy_pass https://mirrors.sustech.edu.cn/anaconda-extra/cloud$request_uri;
-        proxy_store {{ proxy_store }}/conda.anaconda.org$uri;
+        proxy_store {{ http.server.proxy_store }}/conda.anaconda.org$uri;
     }
 }
-
-{% for k, v in conda_mirrors|dictsort %}
-server {
-    listen {{ v }};
-    location / {
-        proxy_pass https://{{ k }};
-    }
-}
-{% endfor %}
 
 # http://nginx.org/en/docs/http/ngx_http_upstream_module.html
 upstream upstream_anaconda {
     keepalive 5;
-    {%- for k, v in conda_mirrors|dictsort %}
-    server 127.0.0.1:{{ v }};
+    resolver 114.114.114.114 ipv6=off;
+    {%- for host in conda.mirrors %}
+    server {{ host }}:443;
     {%- endfor %}
 }

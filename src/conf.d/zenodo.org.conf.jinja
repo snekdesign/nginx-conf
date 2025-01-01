@@ -2,7 +2,7 @@ server {
     # http://nginx.org/en/docs/http/ngx_http_core_module.html
     include snippets/ssl.conf;
     resolver 127.0.0.1 ipv6=off;
-    root {{ proxy_store }}/$server_name;
+    root {{ http.server.proxy_store }}/$server_name;
     server_name zenodo.org;
 
     location /static/ {
@@ -18,7 +18,7 @@ server {
 
         # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
         proxy_pass https://$server_name;
-        proxy_store {{ proxy_store }}/$server_name$uri;
+        proxy_store {{ http.server.proxy_store }}/$server_name$uri;
     }
 
     location / {

@@ -1,12 +1,7 @@
-# http://nginx.org/en/docs/http/ngx_http_core_module.html
-root {{ proxy_store }}/$server_name;
-location / {
+# http://nginx.org/en/docs/http/ngx_http_rewrite_module.html
+if ($args = "") {
+
+    # http://nginx.org/en/docs/http/ngx_http_core_module.html
     error_page 404 = @fetch;
-    log_not_found off;
-
-    # https://nginx.org/en/docs/http/ngx_http_autoindex_module.html
-    autoindex on;
+    root {{ http.server.proxy_store }}/$server_name;
 }
-
-# http://nginx.org/en/docs/http/ngx_http_proxy_module.html
-proxy_store {{ proxy_store }}/$server_name$uri;

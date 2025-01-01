@@ -1,16 +1,17 @@
 server {
     # http://nginx.org/en/docs/http/ngx_http_core_module.html
     include snippets/ssl.conf;
-    server_name cdn.jsdelivr.net;
+    resolver 127.0.0.1 ipv6=off;
+    server_name github.githubassets.com;
 
-    location /npm/ {
+    location / {
         include snippets/static_file_proxy.conf;
 
         # http://nginx.org/en/docs/http/ngx_http_rewrite_module.html
         if ($args != "") {
 
             # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
-            proxy_pass https://fastly.jsdelivr.net;
+            proxy_pass https://$server_name;
         }
     }
 
@@ -18,11 +19,7 @@ server {
         internal;
 
         # http://nginx.org/en/docs/http/ngx_http_proxy_module.html
-        proxy_pass https://fastly.jsdelivr.net;
+        proxy_pass https://$server_name;
         proxy_store {{ http.server.proxy_store }}/$server_name$uri;
-    }
-
-    location / {
-        proxy_pass https://fastly.jsdelivr.net;
     }
 }
