@@ -5,6 +5,12 @@ server {
     resolver 114.114.114.114 ipv6=off;
     root {{ http.server.proxy_store }}/conda.anaconda.org;
 
+    # https://conda.org/learn/ceps/cep-0016/
+    location ~ ^/[a-zA-Z0-9\-]+/repodata_shards\.msgpack\.zst$ {
+        log_not_found off;
+        return 404;
+    }
+
     location ~ ^/[a-zA-Z0-9\-]+/label/*\.(conda|tar\.bz2)$ {
         error_page 404 = @fetch;
         log_not_found off;
