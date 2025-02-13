@@ -58,6 +58,7 @@ server {
         proxy_intercept_errors on;
         proxy_next_upstream http_502;
         proxy_pass https://upstream_anaconda/anaconda/cloud$request_uri;
+        proxy_ssl_server_name on;
         proxy_store {{ http.server.proxy_store }}/conda.anaconda.org$uri;
     }
 
@@ -69,6 +70,7 @@ server {
         proxy_intercept_errors on;
         proxy_next_upstream http_502;
         proxy_pass https://upstream_anaconda_subset/anaconda/cloud$request_uri;
+        proxy_ssl_server_name on;
     }
 
     location @fetch_nvidia {
@@ -78,6 +80,7 @@ server {
 
         proxy_intercept_errors on;
         proxy_pass https://mirrors.sustech.edu.cn/anaconda-extra/cloud$request_uri;
+        proxy_ssl_server_name on;
         proxy_store {{ http.server.proxy_store }}/conda.anaconda.org$uri;
     }
 
@@ -88,6 +91,7 @@ server {
 
         proxy_intercept_errors on;
         proxy_pass https://mirrors.sustech.edu.cn/anaconda-extra/cloud$request_uri;
+        proxy_ssl_server_name on;
     }
 }
 
