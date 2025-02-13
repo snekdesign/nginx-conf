@@ -25,6 +25,7 @@ import platformdirs
 import pooch  # pyright: ignore[reportMissingTypeStubs]
 import pydantic
 import pydantic_settings
+import rattler.platform
 import requests
 import rich.logging
 import tqdm.rich
@@ -215,8 +216,12 @@ class _ServerSettings(pydantic.BaseModel):
 
 
 class _CondaSettings(_Listen):
+    channels: list[str]
     mirrors: list[str]
+    mirrors_with_zst: list[str]
     intel: _Listen
+    platforms: list[rattler.platform.PlatformLiteral] = list(
+        rattler.platform.PlatformLiteral.__args__)
 
 
 class _HTTPSettings(pydantic.BaseModel):

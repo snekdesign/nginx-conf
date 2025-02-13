@@ -15,6 +15,7 @@ pandas = '>=2.1.1'
 pandas-stubs = '>=2.1.1'
 pooch = '>=1.8.1'
 pydantic-settings = '>=2.3.0'
+py-rattler = '*'
 python = '>=3.12.0'
 rich = '>=9.12.0'
 tqdm = '>=4.56.0'
@@ -28,10 +29,45 @@ m2-make = '*'
 
 [tool.pydantic-settings.conda]
 port = 3000
+channels = [
+    'auto',
+    'biobakery',
+    'bioconda',
+    'c4aarch64',
+    'caffe2',
+    'conda-forge',
+    'deepmodeling',
+    'dglteam',
+    'fastai',
+    'fermi',
+    'idaholab',
+    'matsci',
+    'menpo',
+    'MindSpore',
+    'mordred-descriptor',
+    'msys2',
+    'numba',
+    'ohmeta',
+    'omnia',
+    'Paddle',
+    'peterjc123',
+    'plotly',
+    'psi4',
+    'pytorch-lts',
+    'pytorch-test',
+    'pytorch',
+    'pytorch3d',
+    'pyviz',
+    'qiime2',
+    'rapidsai',
+    'rdkit',
+    'simpleitk',
+    'speleo3',
+    'stackless',
+    'ursky',
+]
 mirrors = [
-    'mirrors.bfsu.edu.cn',
-    'mirror.bjtu.edu.cn',
-    'mirrors.cqupt.edu.cn',
+    # 'mirror.bjtu.edu.cn',
     'mirrors.lzu.edu.cn',
     'mirrors.njtech.edu.cn',
     'mirror.nju.edu.cn',
@@ -39,6 +75,15 @@ mirrors = [
     'mirrors.pku.edu.cn',
     'mirrors.shanghaitech.edu.cn',
     'mirror.sjtu.edu.cn',
+    'mirrors.sustech.edu.cn',
+    'mirrors.tuna.tsinghua.edu.cn',
+    'mirrors.ustc.edu.cn',
+    'mirrors.zju.edu.cn',
+]
+mirrors_with_zst = [
+    'mirrors.lzu.edu.cn',
+    'mirror.nju.edu.cn',
+    'mirrors.shanghaitech.edu.cn',
     'mirrors.sustech.edu.cn',
     'mirrors.tuna.tsinghua.edu.cn',
     'mirrors.ustc.edu.cn',
