@@ -379,7 +379,8 @@ def _download(
                         headers.pop('Range', None)
                         restart = True
                     case requests.RequestException():
-                        if r := e.response:
+                        r = e.response
+                        if r is not None:  # r.__bool__ is overriden
                             if r.status_code >= 400:
                                 raise
                             if (
