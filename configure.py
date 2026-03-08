@@ -1,9 +1,9 @@
 import collections
 import contextlib
-import datetime
 import ipaddress
 import json
 import logging
+import time
 from typing import Annotated
 from typing import Any
 from typing import BinaryIO
@@ -58,17 +58,14 @@ class _GithubMeta(pydantic_settings.BaseSettings):
         file_secret_settings: pydantic_settings.PydanticBaseSettingsSource,
     ):
         headers = {'X-GitHub-Api-Version': '2022-11-28'}
-        json_file = pooch.create(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-            path=pooch.os_cache('pooch'),  # pyright: ignore[reportUnknownMemberType]
-            base_url='https://api.github.com/',
-            version=datetime.date.today().strftime('%Y.%m'),
-            registry={'meta': None},
-        ).fetch(
-            fname='meta',
-            downloader=_Downloader(headers=headers),
+        json_file = pooch.retrieve(  # pyright: ignore[reportUnknownMemberType]
+            'https://api.github.com/meta',
+            known_hash=None,
+            path=pooch.os_cache('pooch') / time.strftime('%Y.%m'),
+            downloader=_Downloader(headers=headers),  # pyright: ignore[reportArgumentType]
         )
         return (
-            pydantic_settings.JsonConfigSettingsSource(settings_cls, json_file),  # pyright: ignore[reportUnknownArgumentType]
+            pydantic_settings.JsonConfigSettingsSource(settings_cls, json_file),
         )
 
 
@@ -129,23 +126,20 @@ class _Data(pydantic_settings.BaseSettings):
             'Accept': 'application/vnd.github.raw+json',
             'X-GitHub-Api-Version': '2022-11-28',
         }
-        csv_file = pooch.create(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-            path=pooch.os_cache('pooch'),  # pyright: ignore[reportUnknownMemberType]
-            base_url='https://api.github.com/repos/mime-types/mime-types-data/contents/data/',
-            version=datetime.date.today().strftime('%Y.%m'),
-            registry={'ext_mime.db': None},
-        ).fetch(
-            fname='ext_mime.db',
-            downloader=_Downloader(headers=headers),
+        csv_file = pooch.retrieve(  # pyright: ignore[reportUnknownMemberType]
+            'https://api.github.com/repos/mime-types/mime-types-data/contents/data/ext_mime.db',
+            known_hash=None,
+            path=pooch.os_cache('pooch') / time.strftime('%Y.%m'),
+            downloader=_Downloader(headers=headers),  # pyright: ignore[reportArgumentType]
         )
         series = cast(
             'pd.Series[Any]',
-            pd.read_csv(csv_file, sep=r'\s+', header=None, usecols=[0, 1])  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+            pd.read_csv(csv_file, sep=r'\s+', header=None, usecols=[0, 1])
               .groupby(1)
               .agg(' '.join)
               .squeeze()
         )
-        init_kwargs = {'mime': {'types': series.to_dict()}}  # pyright: ignore[reportUnknownMemberType]
+        init_kwargs = {'mime': {'types': series.to_dict()}}
         return (
             pydantic_settings.PyprojectTomlConfigSettingsSource(settings_cls),
             pydantic_settings.InitSettingsSource(settings_cls, init_kwargs),

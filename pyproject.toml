@@ -14,7 +14,7 @@ minijinja = { channel = 'https://prefix.dev/github-releases' }
 openssl = '>=3.4.0'
 pandas = '>=2.1.1'
 pandas-stubs = '>=2.1.1'
-pooch = '>=1.8.1'
+pooch = '>=1.9.0'
 pydantic-settings = '>=2.3.0'
 py-rattler = '*'
 python = '>=3.12.0'
