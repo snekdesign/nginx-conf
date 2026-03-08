@@ -1,16 +1,13 @@
 import collections
-import contextlib
 import ipaddress
 import json
 import logging
 import time
 from typing import Annotated
 from typing import Any
-from typing import BinaryIO
 from typing import cast
 from typing import override
 from typing import TYPE_CHECKING
-import warnings
 
 import annotated_types as at
 import pandas as pd
@@ -18,9 +15,7 @@ import pooch  # pyright: ignore[reportMissingTypeStubs]
 import pydantic
 import pydantic_settings
 import rattler.platform
-import requests
 import rich.logging
-import tqdm.rich
 
 
 def main():
@@ -62,7 +57,7 @@ class _GithubMeta(pydantic_settings.BaseSettings):
             'https://api.github.com/meta',
             known_hash=None,
             path=pooch.os_cache('pooch') / time.strftime('%Y.%m'),
-            downloader=_Downloader(headers=headers),  # pyright: ignore[reportArgumentType]
+            downloader=pooch.HTTPDownloader(headers=headers),  # pyright: ignore[reportArgumentType]
         )
         return (
             pydantic_settings.JsonConfigSettingsSource(settings_cls, json_file),
@@ -130,7 +125,7 @@ class _Data(pydantic_settings.BaseSettings):
             'https://api.github.com/repos/mime-types/mime-types-data/contents/data/ext_mime.db',
             known_hash=None,
             path=pooch.os_cache('pooch') / time.strftime('%Y.%m'),
-            downloader=_Downloader(headers=headers),  # pyright: ignore[reportArgumentType]
+            downloader=pooch.HTTPDownloader(headers=headers),  # pyright: ignore[reportArgumentType]
         )
         series = cast(
             'pd.Series[Any]',
@@ -144,144 +139,6 @@ class _Data(pydantic_settings.BaseSettings):
             pydantic_settings.PyprojectTomlConfigSettingsSource(settings_cls),
             pydantic_settings.InitSettingsSource(settings_cls, init_kwargs),
         )
-
-
-class _Downloader:
-    def __init__(
-        self,
-        *,
-        size: int | None = None,
-        headers: dict[str, str] | None = None,
-    ):
-        self._size = size
-        self._headers = headers.copy() if headers else {}
-
-    def __call__(
-        self,
-        url: str,
-        output_file: str | BinaryIO,
-        pooch: pooch.Pooch,
-    ):
-        with contextlib.ExitStack() as stack:
-            if isinstance(output_file, str):
-                output_file = stack.enter_context(open(output_file, 'w+b'))
-            if self._size and output_file.seekable():
-                output_file.truncate(output_file.tell() + self._size)
-            return _download(url, output_file, self._size, self._headers)
-
-
-class _ProgressBar(Any):
-    def __init__(self, output_file: BinaryIO, total: int | None):
-        self.initial = 0
-        self._output_file = output_file
-        self._total = total
-
-    def close(self):
-        if hasattr(self, 'impl'):
-            self.impl.close()
-
-    def reset(self):
-        self.impl.n = self.initial
-
-    def update(self, n: int, /):
-        self.impl.update(n)
-
-    @property
-    def total(self):
-        return self._total
-
-    @total.setter
-    def total(self, value: int):
-        try:
-            prog = self.impl
-        except AttributeError:
-            if self._total is None:
-                self._total = value
-                if self._output_file.seekable():
-                    self._output_file.truncate(self._output_file.tell() + value)
-            elif value != self._total:
-                raise _BadContentLength(
-                    f'Expected {self._total} bytes, '
-                    f'got {value} from the Content-Length header',
-                )
-            with warnings.catch_warnings(
-                action='ignore',
-                category=tqdm.TqdmExperimentalWarning,
-            ):
-                self.impl = tqdm.rich.tqdm(
-                    total=self._total,
-                    unit='B',
-                    unit_scale=True,
-                )
-        else:
-            if value != prog.total - prog.n:
-                if value == prog.total and self._output_file.seekable():
-                    raise _Restart()
-                raise _BadContentLength(
-                    f'Expected {prog.total - prog.n} bytes left, '
-                    f'got {value} from the Content-Length header',
-                )
-            self.initial = prog.n
-
-
-def _download(
-    url: str,
-    output_file: BinaryIO,
-    total: int | None,
-    headers: dict[str, str],
-):
-    accept_ranges = True
-    initial = output_file.tell() if output_file.seekable() else 0
-    last_exc = None
-    progressbar = _ProgressBar(output_file, total)
-    try:
-        for _ in range(42):
-            downloader = pooch.HTTPDownloader(progressbar, headers=headers)
-            try:
-                return downloader(url, output_file, None)
-            except BaseException as e:
-                e.__context__ = last_exc
-                restart = False
-                match e:
-                    case _Restart():
-                        accept_ranges = False
-                        headers.pop('Range', None)
-                        restart = True
-                    case requests.RequestException():
-                        r = e.response
-                        if r is not None:  # r.__bool__ is overriden
-                            if r.status_code >= 400:
-                                raise
-                            if (
-                                accept_ranges and
-                                r.headers.get('Accept-Ranges', 'none') != 'none'
-                            ):
-                                if n := progressbar.impl.n:
-                                    headers['Range'] = f'bytes={n}-'
-                            elif progressbar.impl.n != progressbar.initial:
-                                if not output_file.seekable():
-                                    raise
-                                restart = True
-                    case _:
-                        raise
-                if restart:
-                    output_file.seek(initial)
-                    total = progressbar.total
-                    progressbar.close()
-                    progressbar = _ProgressBar(output_file, total)
-                last_exc = e
-        assert last_exc
-        raise last_exc
-    finally:
-        progressbar.close()
-
-
-class _BadContentLength(Exception):
-    pass
-
-
-class _Restart(Exception):
-    pass
 
 
 if __name__ == '__main__':

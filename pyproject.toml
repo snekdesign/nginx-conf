@@ -19,7 +19,6 @@ pydantic-settings = '>=2.3.0'
 py-rattler = '*'
 python = '>=3.12.0'
 rich = '>=9.12.0'
-tqdm = '>=4.56.0'
 
 [tool.pixi.target.unix.dependencies]
 make = '*'
