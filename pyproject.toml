@@ -5,11 +5,12 @@ name = 'nginx-conf'
 strict = ['configure.py']
 typeCheckingMode = 'off'
 
-[tool.pixi.project]
-channels = ['conda-forge']
+[tool.pixi.workspace]
+channels = ['conda-forge', 'https://prefix.dev/github-releases']
 platforms = ['linux-64', 'osx-64', 'osx-arm64', 'win-64']
 
 [tool.pixi.dependencies]
+minijinja = { channel = 'https://prefix.dev/github-releases' }
 openssl = '>=3.4.0'
 pandas = '>=2.1.1'
 pandas-stubs = '>=2.1.1'

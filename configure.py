@@ -4,24 +4,16 @@ import datetime
 import ipaddress
 import json
 import logging
-import os
-import platform
-import re
-import shutil
-import sys
-import sysconfig
 from typing import Annotated
 from typing import Any
 from typing import BinaryIO
 from typing import cast
-from typing import NamedTuple
 from typing import override
 from typing import TYPE_CHECKING
 import warnings
 
 import annotated_types as at
 import pandas as pd
-import platformdirs
 import pooch  # pyright: ignore[reportMissingTypeStubs]
 import pydantic
 import pydantic_settings
@@ -39,128 +31,11 @@ def main():
     logger.setLevel(logging.INFO)
     logging.captureWarnings(True)
 
-    _fetch_minijinja_cli()
     github = _GithubMeta()
     obj = _Data().model_dump()
     obj['github'] = {'git': _weighted(github.git), 'web': _weighted(github.web)}
     with open('build/tmp/data.json', 'w', encoding='utf-8') as f:
         json.dump(obj, f, ensure_ascii=False, separators=(',', ':'))
-
-
-def _fetch_minijinja_cli():
-    if shutil.which('minijinja-cli'):
-        return
-    fname = _minijinja_cli_fname()
-    headers = {
-        'Accept': 'application/octet-stream',
-        'X-GitHub-Api-Version': '2022-11-28',
-    }
-    known_hash = None
-    for name, size, url in sorted(_GitHubRelease().assets, reverse=True):
-        if name == fname + '.sha256':
-            sha256 = pooch.retrieve(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-                url,
-                known_hash,
-                downloader=_Downloader(size=size, headers=headers),
-            )
-            known_hash = _parse(sha256, fname)  # pyright: ignore[reportUnknownArgumentType]
-        elif name == fname:
-            dst = os.environ['CONDA_PREFIX']
-            if sys.platform == 'win32':
-                member = 'minijinja-cli.exe'
-                processor = pooch.Unzip([member])
-                dst = os.path.join(dst, 'Library', 'bin', member)
-            else:
-                member = fname.replace('.tar.xz', '/minijinja-cli')
-                processor = pooch.Untar([member])
-                dst = os.path.join(dst, 'bin', os.path.basename(member))
-            [src] = pooch.retrieve(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-                url,
-                known_hash,
-                processor=processor,
-                downloader=_Downloader(size=size, headers=headers),
-            )
-            try:
-                os.link(src, dst)  # pyright: ignore[reportUnknownArgumentType]
-            except OSError:
-                shutil.copy(src, dst)  # pyright: ignore[reportUnknownArgumentType]
-
-
-class _GitHubReleaseAsset(NamedTuple):
-    name: str
-    size: int
-    url: str
-
-
-class _GitHubRelease(pydantic_settings.BaseSettings):
-    assets: list[_GitHubReleaseAsset]
-
-    model_config = pydantic_settings.SettingsConfigDict(extra='ignore')
-
-    if TYPE_CHECKING:
-        def __init__(self): ...
-
-    @override
-    @classmethod
-    def settings_customise_sources(
-        cls,
-        settings_cls: type[pydantic_settings.BaseSettings],
-        init_settings: pydantic_settings.PydanticBaseSettingsSource,
-        env_settings: pydantic_settings.PydanticBaseSettingsSource,
-        dotenv_settings: pydantic_settings.PydanticBaseSettingsSource,
-        file_secret_settings: pydantic_settings.PydanticBaseSettingsSource,
-    ):
-        headers = {
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-        }
-        json_file = pooch.create(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-            path=platformdirs.user_cache_dir('minijinja', 'mitsuhiko'),
-            base_url=f'https://api.github.com/repos/mitsuhiko/minijinja/releases/',
-            version=datetime.date.today().strftime('%Y.%m'),
-            registry={'latest': None},
-        ).fetch(
-            fname='latest',
-            downloader=_Downloader(headers=headers),
-        )
-        return (
-            pydantic_settings.JsonConfigSettingsSource(settings_cls, json_file),  # pyright: ignore[reportUnknownArgumentType]
-        )
-
-
-def _minijinja_cli_fname():
-    ext_suffix: str = sysconfig.get_config_var('EXT_SUFFIX')
-    if ext_suffix.endswith('-win_amd64.pyd'):
-        return 'minijinja-cli-x86_64-pc-windows-msvc.zip'
-    if ext_suffix.endswith('-x86_64-linux-gnu.so'):
-        return 'minijinja-cli-x86_64-unknown-linux-gnu.tar.xz'
-    if ext_suffix.endswith('-darwin.so'):
-        match platform.machine():
-            case 'arm64':
-                return 'minijinja-cli-aarch64-apple-darwin.tar.xz'
-            case 'x86_64':
-                return 'minijinja-cli-x86_64-apple-darwin.tar.xz'
-            case _:
-                pass
-    raise NotImplementedError('Unsupported platform')
-
-
-def _parse(path: str, fname: str):
-    with open(path, encoding='ascii') as f:
-        sha256 = f.read(64)
-        if not (
-            re.fullmatch(r'[0-9a-f]{64}', sha256)
-            and f.read(2) == ' *'
-            and f.read(len(fname)) == fname
-            and f.read() == '\n'
-        ):
-            f.seek(0)
-            try:
-                raise ValueError(f.read())
-            finally:
-                f.close()
-                os.unlink(path)
-    return sha256
 
 
 class _GithubMeta(pydantic_settings.BaseSettings):
@@ -407,8 +282,12 @@ def _download(
         progressbar.close()
 
 
-class _BadContentLength(Exception): pass
-class _Restart(Exception): pass
+class _BadContentLength(Exception):
+    pass
+
+
+class _Restart(Exception):
+    pass
 
 
 if __name__ == '__main__':
